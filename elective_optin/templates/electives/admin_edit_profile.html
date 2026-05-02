@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% block title %}Admin Edit Profile — SJBIT{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <h1>Edit Any User Profile</h1>
+  <p>Search and edit any user's profile by username</p>
+</div>
+
+<!-- Search User -->
+<div class="card mb-4">
+  <div class="card-body">
+    <h5 style="font-weight:700; margin-bottom:1rem; color:var(--text);">
+      🔍 Search User
+    </h5>
+    <form method="GET" class="d-flex gap-2">
+      <input type="text" name="username" class="form-control" placeholder="Enter username (USN for students)" value="{{ username }}" required>
+      <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+  </div>
+</div>
+
+{% if target_user %}
+<!-- User Found -->
+<div class="alert alert-success">
+  <strong>User Found:</strong> {{ target_user.username }}
+  {% if target_student %}
+    (Student: {{ target_student.name }})
+  {% elif target_department %}
+    (Department Admin: {{ target_department.name }})
+  {% elif target_user.is_superuser %}
+    (Super Admin)
+  {% else %}
+    (Regular User)
+  {% endif %}
+</div>
+
+<div class="row">
+  <!-- Edit Username -->
+  <div class="col-md-6 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <h5 style="font-weight:700; margin-bottom:1rem; color:var(--text);">
+          👤 Update Username
+        </h5>
+        <form method="POST">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="update_username">
+          
+          <div class="mb-3">
+            <label class="form-label">Current Username</label>
+            <input type="text" class="form-control" value="{{ target_user.username }}" disabled>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">New Username</label>
+            <input type="text" name="username" class="form-control" value="{{ target_user.username }}" required>
+          </div>
+          
+          <button type="submit" class="btn btn-primary">
+            Update Username
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {% if target_student %}
+  <!-- Edit Student Name -->
+  <div class="col-md-6 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <h5 style="font-weight:700; margin-bottom:1rem; color:var(--text);">
+          📝 Update Student Name
+        </h5>
+        <form method="POST">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="update_name">
+          
+          <div class="mb-3">
+            <label class="form-label">Current Name</label>
+            <input type="text" class="form-control" value="{{ target_student.name }}" disabled>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">New Name</label>
+            <input type="text" name="name" class="form-control" value="{{ target_student.name }}" required>
+          </div>
+          
+          <button type="submit" class="btn btn-primary">
+            Update Name
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Reset Password -->
+  <div class="col-md-6 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <h5 style="font-weight:700; margin-bottom:1rem; color:var(--text);">
+          🔒 Reset Password
+        </h5>
+        <form method="POST">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="reset_password">
+          
+          <div class="mb-3">
+            <label class="form-label">New Password</label>
+            <input type="password" name="new_password" class="form-control" required minlength="4">
+            <small class="text-muted">Minimum 4 characters</small>
+          </div>
+          
+          <button type="submit" class="btn btn-warning">
+            Reset Password
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- User Information -->
+<div class="card">
+  <div class="card-body">
+    <h5 style="font-weight:700; margin-bottom:1rem; color:var(--text);">
+      📋 User Information
+    </h5>
+    <div class="row">
+      <div class="col-md-6 mb-2">
+        <strong>Username:</strong> {{ target_user.username }}
+      </div>
+      <div class="col-md-6 mb-2">
+        <strong>Account Type:</strong> 
+        {% if target_student %}
+          Student
+        {% elif target_department %}
+          Department Admin ({{ target_department.name }})
+        {% elif target_user.is_superuser %}
+          Super Admin
+        {% else %}
+          Regular User
+        {% endif %}
+      </div>
+      {% if target_student %}
+      <div class="col-md-6 mb-2">
+        <strong>Student Name:</strong> {{ target_student.name }}
+      </div>
+      <div class="col-md-6 mb-2">
+        <strong>USN:</strong> {{ target_student.usn }}
+      </div>
+      <div class="col-md-6 mb-2">
+        <strong>Department:</strong> {{ target_student.department.name }}
+      </div>
+      <div class="col-md-6 mb-2">
+        <strong>Semester:</strong> {{ target_student.current_semester }}
+      </div>
+      <div class="col-md-6 mb-2">
+        <strong>Section:</strong> {{ target_student.section }}
+      </div>
+      <div class="col-md-6 mb-2">
+        <strong>Must Change Password:</strong> 
+        {% if target_student.must_change_password %}
+          <span class="text-warning">Yes</span>
+        {% else %}
+          <span class="text-success">No</span>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% elif username %}
+<!-- User Not Found -->
+<div class="alert alert-danger">
+  <strong>User Not Found:</strong> No user with username "{{ username }}" exists.
+</div>
+{% endif %}
+
+<div class="mt-3">
+  <a href="/admin-panel/" class="btn btn-outline-secondary">
+    ← Back to Admin Dashboard
+  </a>
+</div>
+
+{% endblock %}

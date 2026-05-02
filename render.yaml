@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: sjbit-elective-optin
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn elective_optin.wsgi:application --chdir elective_optin --workers 2 --threads 2 --timeout 120"
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true          # Render auto-generates a secure key
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "https://sjbit-elective-optin.onrender.com"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sjbit-elective-db
+          property: connectionString
+
+databases:
+  - name: sjbit-elective-db
+    databaseName: sjbit_elective
+    user: sjbit_admin
+    plan: free

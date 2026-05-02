@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% block title %}Edit Course — SJBIT{% endblock %}
+
+{% block content %}
+
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1>Edit Course</h1>
+    <p>Update course details before publishing</p>
+  </div>
+  <a href="{% if back_url %}{{ back_url }}{% else %}/admin-panel/?tab=courses{% endif %}" class="btn btn-outline-secondary btn-sm">← Back to Courses</a>
+</div>
+
+<!-- Course meta info -->
+<div class="d-flex flex-wrap gap-2 mb-4 align-items-center">
+  {% if course.category == 'professional' %}<span class="cat-tag cat-professional">Professional Elective</span>
+  {% elif course.category == 'open' %}<span class="cat-tag cat-open">Open Elective</span>
+  {% else %}<span class="cat-tag cat-ability">Ability Enhancement</span>{% endif %}
+  <span class="dept-tag">{{ course.department.name }}</span>
+  <span style="font-size:.78rem; color:var(--muted);">Sem {{ course.semester }}</span>
+  {% if course.is_published %}
+    <span style="background:var(--success-l);color:var(--success);border-radius:7px;padding:.2rem .6rem;font-size:.75rem;font-weight:700;">✅ Published</span>
+  {% else %}
+    <span style="background:var(--warn-l);color:var(--warn);border-radius:7px;padding:.2rem .6rem;font-size:.75rem;font-weight:700;">⏳ Draft</span>
+  {% endif %}
+</div>
+
+{% if course.is_published %}
+<div class="alert" style="background:#fef3c7; border:1px solid #fcd34d; border-radius:10px; padding:.85rem 1rem; margin-bottom:1.5rem; font-size:.85rem; color:#92400e;">
+  ⚠️ <strong>This course is already published.</strong> Changes will take effect immediately for students.
+</div>
+{% endif %}
+
+<div class="card" style="max-width:680px;">
+  <div class="card-body" style="padding:1.5rem;">
+
+    {% if messages %}
+      {% for msg in messages %}
+      <div class="alert alert-{{ msg.tags }} mb-3" style="border-radius:10px; font-size:.85rem;">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="POST">
+      {% csrf_token %}
+
+      <div class="row g-3">
+
+        <!-- Course Name -->
+        <div class="col-12">
+          <label class="form-label" style="font-weight:600; font-size:.85rem;">Course Name</label>
+          {{ form.name }}
+          {% if form.name.errors %}
+            <div style="color:var(--danger); font-size:.78rem; margin-top:.25rem;">{{ form.name.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <!-- Category -->
+        <div class="col-12 col-sm-6">
+          <label class="form-label" style="font-weight:600; font-size:.85rem;">Category</label>
+          {{ form.category }}
+          {% if form.category.errors %}
+            <div style="color:var(--danger); font-size:.78rem; margin-top:.25rem;">{{ form.category.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <!-- Semester -->
+        <div class="col-6 col-sm-3">
+          <label class="form-label" style="font-weight:600; font-size:.85rem;">Semester</label>
+          {{ form.semester }}
+          {% if form.semester.errors %}
+            <div style="color:var(--danger); font-size:.78rem; margin-top:.25rem;">{{ form.semester.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <!-- Credits -->
+        <div class="col-6 col-sm-3">
+          <label class="form-label" style="font-weight:600; font-size:.85rem;">Credits</label>
+          {{ form.credits }}
+          {% if form.credits.errors %}
+            <div style="color:var(--danger); font-size:.78rem; margin-top:.25rem;">{{ form.credits.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <!-- Total Seats -->
+        <div class="col-12 col-sm-6">
+          <label class="form-label" style="font-weight:600; font-size:.85rem;">Total Seats</label>
+          {{ form.seats }}
+          <div style="font-size:.75rem; color:var(--muted); margin-top:.25rem;">
+            Currently: {{ course.available_seats }} available / {{ course.seats }} total
+          </div>
+          {% if form.seats.errors %}
+            <div style="color:var(--danger); font-size:.78rem; margin-top:.25rem;">{{ form.seats.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <!-- Prerequisites -->
+        <div class="col-12 col-sm-6">
+          <label class="form-label" style="font-weight:600; font-size:.85rem;">Prerequisites</label>
+          {{ form.prerequisites }}
+          {% if form.prerequisites.errors %}
+            <div style="color:var(--danger); font-size:.78rem; margin-top:.25rem;">{{ form.prerequisites.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <!-- Salient Features -->
+        <div class="col-12">
+          <label class="form-label" style="font-weight:600; font-size:.85rem;">Salient Features</label>
+          {{ form.salient_features }}
+          {% if form.salient_features.errors %}
+            <div style="color:var(--danger); font-size:.78rem; margin-top:.25rem;">{{ form.salient_features.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <!-- Job Perspective -->
+        <div class="col-12">
+          <label class="form-label" style="font-weight:600; font-size:.85rem;">Job Perspective</label>
+          {{ form.job_perspective }}
+          {% if form.job_perspective.errors %}
+            <div style="color:var(--danger); font-size:.78rem; margin-top:.25rem;">{{ form.job_perspective.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+      </div>
+
+      <!-- Actions -->
+      <div class="d-flex gap-2 mt-4 flex-wrap">
+        <button type="submit" class="btn btn-primary">
+          💾 Save Changes
+        </button>
+        <a href="{% if back_url %}{{ back_url }}{% else %}/admin-panel/?tab=courses{% endif %}" class="btn btn-outline-secondary">
+          Cancel
+        </a>
+        {% if not course.is_published %}
+        <a href="/publish/{{ course.id }}/"
+           class="btn btn-success ms-auto"
+           onclick="return confirm('Save and publish \'{{ course.name }}\' to students?')">
+          ✅ Save & Publish
+        </a>
+        {% endif %}
+      </div>
+
+    </form>
+  </div>
+</div>
+
+{% endblock %}

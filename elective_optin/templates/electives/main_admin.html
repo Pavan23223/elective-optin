@@ -1,0 +1,594 @@
+{% extends 'base.html' %}
+{% block title %}Admin Panel — EduElect{% endblock %}
+
+{% block content %}
+
+<div class="page-header d-flex justify-content-between align-items-start flex-wrap gap-2">
+  <div>
+    <h1>Admin Panel</h1>
+    <p>Manage students, publish courses and allocations</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="/export/" class="btn btn-outline-primary btn-sm">⬇ Export CSV</a>
+  </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#4f46e5,#7c3aed);">
+      <h6>Students</h6>
+      <h2>{{ total_students }}</h2>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#0891b2,#06b6d4);">
+      <h6>Total Courses</h6>
+      <h2>{{ total_courses }}</h2>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#059669,#10b981);">
+      <h6>Published</h6>
+      <h2>{{ published_courses }}</h2>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#d97706,#f59e0b);">
+      <h6>Allocated</h6>
+      <h2>{{ total_allocations }}</h2>
+    </div>
+  </div>
+</div>
+
+<ul class="nav nav-pills mb-4 gap-1 flex-nowrap overflow-auto pb-1" id="adminTabs">
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'courses' or not tab %}active{% endif %}"
+       href="/admin-panel/?tab=courses">
+      📚 <span style="color:{% if tab == 'courses' or not tab %}#fff{% else %}#1e1e2e{% endif %};">Courses</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'students' %}active{% endif %}"
+       href="/admin-panel/?tab=students">
+      🎒 <span style="color:{% if tab == 'students' %}#fff{% else %}#1e1e2e{% endif %};">Students</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'allocations' %}active{% endif %}"
+       href="/admin-panel/?tab=allocations">
+      📋 <span style="color:{% if tab == 'allocations' %}#fff{% else %}#1e1e2e{% endif %};">Allocations</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="/override/"
+       style="background:var(--warn-l); color:#1e1e2e !important; border:1px solid var(--warn);">
+      ⚡ Manual Allocation
+    </a>
+  </li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════════ COURSES TAB -->
+{% if tab == 'courses' or not tab %}
+
+{% if groups %}
+  {% for sem, categories in groups.items %}
+  <!-- ── Semester Section ── -->
+  <div class="mb-4">
+
+    <!-- Semester header + bulk actions for whole semester -->
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+      <div style="display:flex; align-items:center; gap:.75rem;">
+        <span style="background:var(--primary); color:#fff; border-radius:10px; padding:.35rem .9rem; font-size:.85rem; font-weight:800;">
+          Semester {{ sem }}
+        </span>
+        <span style="font-size:.82rem; color:var(--muted);">
+          {{ categories|length }} categor{{ categories|length|pluralize:"y,ies" }}
+        </span>
+      </div>
+      <div class="btn-group-mobile">
+        <a href="/bulk-publish/?sem={{ sem }}&action=publish"
+           class="btn btn-sm btn-success"
+           onclick="return confirm('Publish ALL courses in Semester {{ sem }}?')">
+          ✅ Publish All Sem {{ sem }}
+        </a>
+        <a href="/bulk-publish/?sem={{ sem }}&action=unpublish"
+           class="btn btn-sm btn-outline-secondary"
+           onclick="return confirm('Unpublish ALL courses in Semester {{ sem }}?')">
+          Unpublish All
+        </a>
+      </div>
+    </div>
+
+    <!-- Category groups within this semester -->
+    {% for cat_key, grp in categories.items %}
+    <div class="card mb-3">
+      <div class="card-body">
+
+        <!-- Group header -->
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-3">
+          <div style="display:flex; align-items:center; gap:.6rem; flex-wrap:wrap;">
+            {% if cat_key == 'professional' %}<span class="cat-tag cat-professional">Professional Elective</span>
+            {% elif cat_key == 'open' %}<span class="cat-tag cat-open">Open Elective</span>
+            {% else %}<span class="cat-tag cat-ability">Ability Enhancement</span>{% endif %}
+
+            <span style="font-size:.8rem; color:var(--muted);">
+              {{ grp.published }}/{{ grp.total }} published
+            </span>
+
+            <!-- Progress bar -->
+            <div style="width:80px; height:6px; background:#e5e7eb; border-radius:99px; overflow:hidden;">
+              <div style="height:100%; border-radius:99px; background:var(--success);
+                width:{% if grp.total %}{% widthratio grp.published grp.total 100 %}%{% else %}0%{% endif %};"></div>
+            </div>
+          </div>
+
+          <!-- Bulk action + download for this group -->
+          <div class="btn-group-mobile">
+            {% if grp.all_published %}
+              <a href="/bulk-publish/?sem={{ sem }}&category={{ cat_key }}&action=unpublish"
+                 class="btn btn-xs btn-outline-secondary">Unpublish Group</a>
+            {% elif grp.none_published %}
+              <a href="/bulk-publish/?sem={{ sem }}&category={{ cat_key }}&action=publish"
+                 class="btn btn-xs btn-success" style="color:#fff;">
+                Publish All {{ grp.total }}
+              </a>
+            {% else %}
+              <a href="/bulk-publish/?sem={{ sem }}&category={{ cat_key }}&action=publish"
+                 class="btn btn-xs btn-primary">
+                Publish Remaining {{ grp.total|add:"-"|add:grp.published }}
+              </a>
+              <a href="/bulk-publish/?sem={{ sem }}&category={{ cat_key }}&action=unpublish"
+                 class="btn btn-xs btn-outline-secondary">Unpublish All</a>
+            {% endif %}
+            <a href="/export/?category={{ cat_key }}&sem={{ sem }}"
+               class="btn btn-xs btn-outline-primary" title="Download allocation report for this group">
+              ⬇ Download
+            </a>
+          </div>
+        </div>
+
+        <!-- Courses table -->
+        <div class="table-wrap">
+          <table class="table table-hover mb-0">
+            <thead>
+              <tr>
+                <th>Course</th>
+                <th>Dept</th>
+                <th class="hide-xs">Credits</th>
+                <th>Seats</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for course in grp.courses %}
+              <tr>
+                <td>
+                  <div style="font-weight:600; font-size:.88rem;">{{ course.name }}</div>
+                  <div style="font-size:.74rem; color:var(--muted);">{{ course.job_perspective|truncatechars:50 }}</div>
+                </td>
+                <td><span class="dept-tag">{{ course.department.name }}</span></td>
+                <td class="hide-xs"><span style="font-weight:700; color:var(--primary);">{{ course.credits }}cr</span></td>
+                <td>
+                  <span class="seats-badge {% if course.available_seats == 0 %}low{% endif %}">
+                    {{ course.available_seats }}/{{ course.seats }}
+                  </span>
+                </td>
+                <td>
+                  {% if course.is_published %}
+                    <span style="background:var(--success-l);color:var(--success);border-radius:7px;padding:.2rem .55rem;font-size:.74rem;font-weight:700;">✅ Live</span>
+                  {% else %}
+                    <span style="background:var(--warn-l);color:var(--warn);border-radius:7px;padding:.2rem .55rem;font-size:.74rem;font-weight:700;">⏳ Draft</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="dropdown">
+                    <button class="btn btn-xs btn-outline-secondary dropdown-toggle" type="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                      Actions
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="min-width:160px; border-radius:10px; font-size:.84rem;">
+                      <li>
+                        <a class="dropdown-item"
+                           href="/edit-course/{{ course.id }}/">
+                          ✏️ Edit Course
+                        </a>
+                      </li>
+                      <li><hr class="dropdown-divider my-1"></li>
+                      {% if course.is_published %}
+                      <li>
+                        <a class="dropdown-item text-warning"
+                           href="/unpublish/{{ course.id }}/"
+                           onclick="return confirm('Unpublish \'{{ course.name }}\'?\nStudents will no longer see this course.')">
+                          📤 Unpublish
+                        </a>
+                      </li>
+                      {% else %}
+                      <li>
+                        <a class="dropdown-item text-success"
+                           href="/publish/{{ course.id }}/"
+                           onclick="return confirm('Publish \'{{ course.name }}\' to students?\nThis will make it visible for Semester {{ course.semester }}.')">
+                          ✅ Publish
+                        </a>
+                      </li>
+                      {% endif %}
+                      <li><hr class="dropdown-divider my-1"></li>
+                      <li>
+                        <a class="dropdown-item text-danger"
+                           href="/delete-course/{{ course.id }}/"
+                           onclick="return confirm('⚠️ DELETE \'{{ course.name }}\'?\n\nThis is permanent and cannot be undone.\nAll student preferences for this course will also be removed.')">
+                          🗑 Delete Course
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+    {% endfor %}
+
+  </div>
+  {% endfor %}
+
+{% else %}
+<div class="card">
+  <div class="card-body text-center py-5" style="color:var(--muted);">
+    <div style="font-size:3rem; margin-bottom:.5rem;">📚</div>
+    <p style="font-weight:600;">No courses submitted yet.</p>
+    <p style="font-size:.85rem;">Department admins need to add courses first.</p>
+  </div>
+</div>
+{% endif %}
+
+{% endif %}
+
+<!-- ═══════════════════════════════════════════════════════ STUDENTS TAB -->
+{% if tab == 'students' %}
+
+<!-- Upload Card -->
+<div class="card mb-4">
+  <div class="card-body">
+    <p style="font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin-bottom:.5rem;">⬆ Upload Student List</p>
+    <p style="font-size:.82rem; color:var(--muted); margin-bottom:1rem;">
+      CSV columns: <code style="background:#f3f4f6; padding:.1rem .4rem; border-radius:5px;">USN, Name, Department, Semester, Section, CGPA</code>
+      — passwords default to <strong>student@1234</strong>
+    </p>
+    <div class="upload-zone">
+      <form method="POST" action="/upload-students/" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div style="font-size:1.8rem; margin-bottom:.4rem;">📂</div>
+        <p style="font-size:.85rem; font-weight:600; margin-bottom:.8rem; color:var(--text);">Choose your CSV file</p>
+        <input type="file" name="csv_file" accept=".csv" class="form-control form-control-sm mb-3"
+               style="max-width:300px; margin:0 auto;" required>
+        <div class="btn-group-mobile justify-content-center">
+          <button type="submit" class="btn btn-primary btn-sm">⬆ Upload</button>
+          <a href="/download-student-template/" class="btn btn-outline-secondary btn-sm">⬇ Download Template</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-bar">
+  <form method="get" action="/admin-panel/" class="row g-2 align-items-end">
+    <input type="hidden" name="tab" value="students">
+    <div class="col-6 col-sm-3">
+      <label class="form-label">Department</label>
+      <select name="dept_f" class="form-select form-select-sm">
+        <option value="">All Depts</option>
+        {% for d in departments %}
+        <option value="{{ d.name }}" {% if dept_f == d.name %}selected{% endif %}>{{ d.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-sm-3">
+      <label class="form-label">Semester</label>
+      <select name="sem_f" class="form-select form-select-sm">
+        <option value="">All Sems</option>
+        {% for s in student_sem_choices %}
+        <option value="{{ s }}" {% if sem_f == s|stringformat:"s" %}selected{% endif %}>Sem {{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-sm-3">
+      <label class="form-label">Section</label>
+      <select name="section_f" class="form-select form-select-sm">
+        <option value="">All Sections</option>
+        {% for s in student_section_choices %}
+        <option value="{{ s }}" {% if section_f == s %}selected{% endif %}>Section {{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-sm-3">
+      <div class="btn-group-mobile">
+        <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+        <a href="/admin-panel/?tab=students" class="btn btn-outline-secondary btn-sm">Clear</a>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Students Table -->
+<div class="card">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+      <div>
+        <p style="font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin:0;">
+          All Students
+        </p>
+        <span style="font-size:.82rem; color:var(--muted);">
+          Showing {{ students.count }}
+          {% if dept_f %} · {{ dept_f }}{% endif %}
+          {% if sem_f %} · Sem {{ sem_f }}{% endif %}
+          {% if section_f %} · Section {{ section_f }}{% endif %}
+        </span>
+      </div>
+      <a href="/export-students/?{% if dept_f %}dept={{ dept_f }}&{% endif %}{% if sem_f %}sem={{ sem_f }}&{% endif %}{% if section_f %}section={{ section_f }}{% endif %}"
+         class="btn btn-outline-primary btn-sm">⬇ Export Filtered CSV</a>
+    </div>
+    {% if students %}
+    <div class="table-wrap">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>USN</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Sem</th>
+            <th>Section</th>
+            <th>CGPA</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students %}
+          <tr>
+            <td style="color:#d1d5db; font-size:.78rem;">{{ forloop.counter }}</td>
+            <td style="font-family:monospace; font-size:.85rem; font-weight:700; color:var(--primary);">{{ s.usn }}</td>
+            <td style="font-weight:600; color:#1e1e2e;">{{ s.name }}</td>
+            <td><span class="dept-tag">{{ s.department.name }}</span></td>
+            <td><strong style="color:#1e1e2e;">{{ s.current_semester }}</strong></td>
+            <td style="color:#1e1e2e;">{{ s.section }}</td>
+            <td>
+              {% with cgpa=s.cgpa %}
+              <span class="{% if cgpa >= 8.0 %}cgpa-high{% elif cgpa >= 6.0 %}cgpa-mid{% else %}cgpa-low{% endif %}">{{ cgpa }}</span>
+              {% endwith %}
+            </td>
+            <td>
+              <a href="/delete-student/{{ s.id }}/"
+                 onclick="return confirm('Remove {{ s.name }}?')"
+                 class="btn btn-xs btn-outline-danger">Remove</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5" style="color:var(--muted);">
+      <div style="font-size:3rem; margin-bottom:.5rem;">🎒</div>
+      <p style="font-weight:600;">No students found.</p>
+      <p style="font-size:.83rem;">{% if dept_f or sem_f or section_f %}Try clearing the filters.{% else %}Upload a CSV to get started.{% endif %}</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<!-- ═══════════════════════════════════════════════════════ ALLOCATIONS TAB -->
+{% if tab == 'allocations' %}
+
+<!-- Filter Bar for Allocations -->
+<div class="filter-bar mb-4">
+  <form method="get" action="/admin-panel/" class="row g-2 align-items-end">
+    <input type="hidden" name="tab" value="allocations">
+    <div class="col-6 col-sm-3 col-md-2">
+      <label class="form-label">Department</label>
+      <select name="alloc_dept" class="form-select form-select-sm">
+        <option value="">All Departments</option>
+        {% for d in departments %}
+        <option value="{{ d.name }}" {% if request.GET.alloc_dept == d.name %}selected{% endif %}>{{ d.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-sm-3 col-md-2">
+      <label class="form-label">Category</label>
+      <select name="alloc_category" class="form-select form-select-sm">
+        <option value="">All Categories</option>
+        {% for cat_key, cat_label in category_choices %}
+        <option value="{{ cat_key }}" {% if request.GET.alloc_category == cat_key %}selected{% endif %}>{{ cat_label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-sm-3 col-md-2">
+      <label class="form-label">Semester</label>
+      <select name="alloc_sem" class="form-select form-select-sm">
+        <option value="">All Semesters</option>
+        {% for s in semesters %}
+        <option value="{{ s }}" {% if request.GET.alloc_sem == s|stringformat:'s' %}selected{% endif %}>Sem {{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-sm-3 col-md-2">
+      <label class="form-label">Status</label>
+      <select name="alloc_status" class="form-select form-select-sm">
+        <option value="">All Status</option>
+        <option value="allocated" {% if request.GET.alloc_status == 'allocated' %}selected{% endif %}>Allocated</option>
+        <option value="rejected" {% if request.GET.alloc_status == 'rejected' %}selected{% endif %}>Rejected</option>
+        <option value="pending" {% if request.GET.alloc_status == 'pending' %}selected{% endif %}>Pending</option>
+      </select>
+    </div>
+    <div class="col-12 col-sm-6 col-md-4">
+      <div class="btn-group-mobile">
+        <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+        <a href="/admin-panel/?tab=allocations" class="btn btn-outline-secondary btn-sm">Clear</a>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Group allocations by course for subject-wise view -->
+{% regroup all_preferences by course as course_groups %}
+
+<div class="card">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+      <h5 style="font-weight:700; margin:0;">All Allocations</h5>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="/export/?{% if request.GET.alloc_dept %}department={{ request.GET.alloc_dept }}&{% endif %}{% if request.GET.alloc_category %}category={{ request.GET.alloc_category }}&{% endif %}{% if request.GET.alloc_sem %}sem={{ request.GET.alloc_sem }}&{% endif %}status=allocated" 
+           class="btn btn-sm btn-outline-success">⬇ Allocated</a>
+        <a href="/export/?{% if request.GET.alloc_dept %}department={{ request.GET.alloc_dept }}&{% endif %}{% if request.GET.alloc_category %}category={{ request.GET.alloc_category }}&{% endif %}{% if request.GET.alloc_sem %}sem={{ request.GET.alloc_sem }}&{% endif %}status=rejected"  
+           class="btn btn-sm btn-outline-danger">⬇ Rejected</a>
+        <a href="/export/?{% if request.GET.alloc_dept %}department={{ request.GET.alloc_dept }}&{% endif %}{% if request.GET.alloc_category %}category={{ request.GET.alloc_category }}&{% endif %}{% if request.GET.alloc_sem %}sem={{ request.GET.alloc_sem }}&{% endif %}status=pending"   
+           class="btn btn-sm btn-outline-warning">⬇ Pending</a>
+        <a href="/export/?{% if request.GET.alloc_dept %}department={{ request.GET.alloc_dept }}&{% endif %}{% if request.GET.alloc_category %}category={{ request.GET.alloc_category }}&{% endif %}{% if request.GET.alloc_sem %}sem={{ request.GET.alloc_sem }}&{% endif %}"                  
+           class="btn btn-sm btn-outline-secondary">⬇ All Filtered</a>
+      </div>
+    </div>
+
+    <!-- Subject-wise tabs -->
+    {% if course_groups %}
+    <ul class="nav nav-pills mb-4 gap-1 flex-nowrap overflow-auto pb-1">
+      <li class="nav-item">
+        <a class="nav-link {% if not request.GET.admin_course_filter %}active{% endif %}"
+           href="/admin-panel/?tab=allocations{% if request.GET.alloc_dept %}&alloc_dept={{ request.GET.alloc_dept }}{% endif %}{% if request.GET.alloc_category %}&alloc_category={{ request.GET.alloc_category }}{% endif %}{% if request.GET.alloc_sem %}&alloc_sem={{ request.GET.alloc_sem }}{% endif %}{% if request.GET.alloc_status %}&alloc_status={{ request.GET.alloc_status }}{% endif %}">
+          All Subjects
+        </a>
+      </li>
+      {% for course_group in course_groups %}
+      <li class="nav-item">
+        <a class="nav-link {% if request.GET.admin_course_filter == course_group.grouper.id|stringformat:'s' %}active{% endif %}"
+           href="/admin-panel/?tab=allocations&admin_course_filter={{ course_group.grouper.id }}{% if request.GET.alloc_dept %}&alloc_dept={{ request.GET.alloc_dept }}{% endif %}{% if request.GET.alloc_category %}&alloc_category={{ request.GET.alloc_category }}{% endif %}{% if request.GET.alloc_sem %}&alloc_sem={{ request.GET.alloc_sem }}{% endif %}{% if request.GET.alloc_status %}&alloc_status={{ request.GET.alloc_status }}{% endif %}">
+          {{ course_group.grouper.name|truncatechars:25 }}
+          <span class="badge bg-primary ms-1">{{ course_group.list|length }}</span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <!-- Course-specific view -->
+    {% if request.GET.admin_course_filter %}
+      {% for course_group in course_groups %}
+        {% if course_group.grouper.id|stringformat:'s' == request.GET.admin_course_filter %}
+        <div class="card mb-3" style="border: 2px solid var(--primary-l);">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+              <div>
+                <h5 class="mb-1">{{ course_group.grouper.name }}</h5>
+                <div class="d-flex gap-2 flex-wrap align-items-center">
+                  <span class="dept-tag">{{ course_group.grouper.department.name }}</span>
+                  {% if course_group.grouper.category == 'professional' %}<span class="cat-tag cat-professional">Professional</span>
+                  {% elif course_group.grouper.category == 'open' %}<span class="cat-tag cat-open">Open</span>
+                  {% else %}<span class="cat-tag cat-ability">Ability</span>{% endif %}
+                  <span style="font-size:.8rem; color:var(--muted);">Semester {{ course_group.grouper.semester }} • {{ course_group.grouper.credits }} Credits</span>
+                </div>
+              </div>
+              <div class="btn-group-mobile">
+                <a href="/download-course-students/{{ course_group.grouper.id }}/" 
+                   class="btn btn-sm btn-primary">⬇ Download Students</a>
+                <a href="/export/?course={{ course_group.grouper.id }}" 
+                   class="btn btn-sm btn-outline-secondary">⬇ All Preferences</a>
+              </div>
+            </div>
+
+            <!-- Detailed table for this course -->
+            <div class="table-wrap">
+              <table class="table table-hover mb-0">
+                <thead>
+                  <tr>
+                    <th>USN</th>
+                    <th>Student</th>
+                    <th>Student Dept</th>
+                    <th>Section</th>
+                    <th>CGPA</th>
+                    <th>Rank</th>
+                    <th>Status</th>
+                    <th>Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for pref in course_group.list %}
+                  <tr>
+                    <td style="font-family:monospace; font-size:.82rem;">{{ pref.student.usn }}</td>
+                    <td style="font-weight:500; font-size:.88rem;">{{ pref.student.name }}</td>
+                    <td><span class="dept-tag">{{ pref.student.department.name }}</span></td>
+                    <td>
+                      <span style="background:var(--primary-l); color:var(--primary); border-radius:6px; padding:.18rem .5rem; font-size:.78rem; font-weight:700;">
+                        {{ pref.student.section|default:"—" }}
+                      </span>
+                    </td>
+                    <td>
+                      {% with cgpa=pref.student.cgpa %}
+                      <span class="{% if cgpa >= 8.0 %}cgpa-high{% elif cgpa >= 6.0 %}cgpa-mid{% else %}cgpa-low{% endif %}">
+                        {{ cgpa }}
+                      </span>
+                      {% endwith %}
+                    </td>
+                    <td><span style="font-weight:700; color:#4f46e5;">{{ pref.rank }}</span></td>
+                    <td>
+                      {% if pref.status == 'allocated' %}<span class="badge-allocated">✅ Allocated</span>
+                      {% elif pref.status == 'rejected' %}<span class="badge-rejected">❌ Rejected</span>
+                      {% else %}<span class="badge-pending">⏳ Pending</span>{% endif %}
+                    </td>
+                    <td style="font-size:.78rem; color:#aaa;">{{ pref.timestamp|date:"d M, H:i" }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      <!-- Overview of all courses -->
+      {% for course_group in course_groups %}
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
+            <div>
+              <h6 class="mb-1" style="font-weight: 600;">{{ course_group.grouper.name }}</h6>
+              <div class="d-flex gap-2 flex-wrap align-items-center">
+                <span class="dept-tag">{{ course_group.grouper.department.name }}</span>
+                {% if course_group.grouper.category == 'professional' %}<span class="cat-tag cat-professional">Professional</span>
+                {% elif course_group.grouper.category == 'open' %}<span class="cat-tag cat-open">Open</span>
+                {% else %}<span class="cat-tag cat-ability">Ability</span>{% endif %}
+                <span style="font-size:.75rem; color:var(--muted);">{{ course_group.list|length }} preferences</span>
+                <span class="seats-badge {% if course_group.grouper.available_seats == 0 %}low{% endif %}">
+                  {{ course_group.grouper.available_seats }}/{{ course_group.grouper.seats }}
+                </span>
+              </div>
+            </div>
+            <div class="btn-group-mobile">
+              <a href="/admin-panel/?tab=allocations&admin_course_filter={{ course_group.grouper.id }}{% if request.GET.alloc_dept %}&alloc_dept={{ request.GET.alloc_dept }}{% endif %}{% if request.GET.alloc_category %}&alloc_category={{ request.GET.alloc_category }}{% endif %}{% if request.GET.alloc_sem %}&alloc_sem={{ request.GET.alloc_sem }}{% endif %}{% if request.GET.alloc_status %}&alloc_status={{ request.GET.alloc_status }}{% endif %}" 
+                 class="btn btn-xs btn-outline-primary">👁 View Details</a>
+              <a href="/download-course-students/{{ course_group.grouper.id }}/" 
+                 class="btn btn-xs btn-primary">⬇ Download</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    {% endif %}
+
+    {% else %}
+    <div class="text-center py-5" style="color:var(--muted);">
+      <div style="font-size:3rem; margin-bottom:.5rem;">📋</div>
+      <p style="font-weight:600;">No allocations found.</p>
+      <p style="font-size:.83rem;">{% if request.GET.alloc_dept or request.GET.alloc_category or request.GET.alloc_sem or request.GET.alloc_status %}Try clearing the filters.{% else %}No preferences have been submitted yet.{% endif %}</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

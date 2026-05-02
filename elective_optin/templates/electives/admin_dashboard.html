@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>{{ department.name }} — Admin Dashboard</h2>
+    <div class="d-flex gap-2">
+        <a href="/allocate/" class="btn btn-warning btn-sm">⚡ Run Allocation</a>
+        <a href="/export/?department={{ department.name }}" class="btn btn-outline-secondary btn-sm">⬇ Export CSV</a>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row mb-4">
+    <div class="col-6 col-md-3 mb-2">
+        <div class="card bg-primary text-white p-3 text-center">
+            <h6>Total Courses</h6>
+            <h3>{{ total_courses }}</h3>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 mb-2">
+        <div class="card bg-success text-white p-3 text-center">
+            <h6>Total Seats</h6>
+            <h3>{{ total_seats }}</h3>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 mb-2">
+        <div class="card bg-warning text-dark p-3 text-center">
+            <h6>Filled Seats</h6>
+            <h3>{{ filled_seats }}</h3>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 mb-2">
+        <div class="card bg-danger text-white p-3 text-center">
+            <h6>Remaining Seats</h6>
+            <h3>{{ remaining_seats }}</h3>
+        </div>
+    </div>
+</div>
+
+<!-- Courses Table -->
+<h5 class="mb-2">Courses</h5>
+<table class="table table-bordered bg-white shadow-sm mb-4">
+    <thead class="table-dark">
+        <tr>
+            <th>Course</th>
+            <th>Category</th>
+            <th>Total Seats</th>
+            <th>Available</th>
+            <th>Filled</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for course in courses %}
+        <tr>
+            <td>{{ course.name }}</td>
+            <td>{{ course.get_category_display }}</td>
+            <td>{{ course.seats }}</td>
+            <td>
+                <span id="seats-{{ course.id }}">{{ course.available_seats }}</span>
+            </td>
+            <td>{{ course.seats|add:"-"|add:course.available_seats }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-muted">No courses found.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Preferences / Allocations Table -->
+<h5 class="mb-2">Student Preferences</h5>
+<div class="mb-2 d-flex gap-2 flex-wrap">
+    <a href="/export/?department={{ department.name }}&status=allocated" class="btn btn-sm btn-outline-success">Export Allocated</a>
+    <a href="/export/?department={{ department.name }}&status=rejected" class="btn btn-sm btn-outline-danger">Export Rejected</a>
+    <a href="/export/?department={{ department.name }}&status=pending" class="btn btn-sm btn-outline-warning">Export Pending</a>
+</div>
+<table class="table table-bordered bg-white shadow-sm">
+    <thead class="table-dark">
+        <tr>
+            <th>USN</th>
+            <th>Student</th>
+            <th>Course</th>
+            <th>Rank</th>
+            <th>Status</th>
+            <th>Timestamp</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in preferences %}
+        <tr>
+            <td>{{ p.student.usn }}</td>
+            <td>{{ p.student.name }}</td>
+            <td>{{ p.course.name }}</td>
+            <td>{{ p.rank }}</td>
+            <td>
+                {% if p.status == "allocated" %}
+                    <span class="badge bg-success">Allocated</span>
+                {% elif p.status == "rejected" %}
+                    <span class="badge bg-danger">Rejected</span>
+                {% else %}
+                    <span class="badge bg-warning text-dark">Pending</span>
+                {% endif %}
+            </td>
+            <td>{{ p.timestamp|date:"d M Y, H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-muted">No preferences submitted yet.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script src="/static/js/ajax_seats.js"></script>
+{% endblock %}

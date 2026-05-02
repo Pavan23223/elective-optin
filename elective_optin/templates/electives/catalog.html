@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}Course Catalog — SJBIT{% endblock %}
+
+{% block content %}
+
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1>Course Catalog</h1>
+    <p>Browse all published elective courses</p>
+  </div>
+  <button onclick="history.back()" class="btn btn-outline-secondary btn-sm">← Back</button>
+</div>
+
+<!-- Category filter pills -->
+<div class="d-flex flex-wrap gap-2 mb-4">
+  <a href="/catalog/"
+     class="btn btn-sm {% if not selected_category %}btn-primary{% else %}btn-outline-secondary{% endif %}"
+     style="border-radius:50px;">All</a>
+  {% for value, label in category_choices %}
+  <a href="/catalog/?category={{ value }}"
+     class="btn btn-sm {% if selected_category == value %}btn-primary{% else %}btn-outline-secondary{% endif %}"
+     style="border-radius:50px;">{{ label }}</a>
+  {% endfor %}
+</div>
+
+{% if selected_category %}
+  <!-- ── Filtered view: flat grid ── -->
+  <div class="row g-3">
+    {% for course in courses %}
+      {% include "electives/_catalog_card.html" %}
+    {% empty %}
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body text-center py-5" style="color:var(--muted);">
+          <div style="font-size:3rem; margin-bottom:.5rem;">📚</div>
+          <p style="font-weight:600;">No courses found</p>
+          <p style="font-size:.83rem;">Try a different category filter.</p>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+{% else %}
+  <!-- ── Full grouped view: Semester → Ability → Open → Professional ── -->
+  {% if grouped %}
+    {% for sem, categories in grouped.items %}
+
+    <!-- Semester heading -->
+    <div class="mb-3 {% if not forloop.first %}mt-5{% endif %}">
+      <h5 style="font-weight:800; color:var(--primary); font-size:1.1rem; margin:0;">
+        📅 Semester {{ sem }}
+      </h5>
+      <hr style="border-color:var(--border); margin:.5rem 0 1rem;">
+    </div>
+
+    <!-- Ability Enhancement -->
+    {% if categories.ability %}
+    <div class="mb-4">
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <span class="cat-tag cat-ability" style="font-size:.8rem;">Ability Enhancement</span>
+        <span style="font-size:.78rem; color:var(--muted);">{{ categories.ability|length }} course{{ categories.ability|length|pluralize }}</span>
+      </div>
+      <div class="row g-3">
+        {% for course in categories.ability %}
+          {% include "electives/_catalog_card.html" %}
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Open Elective -->
+    {% if categories.open %}
+    <div class="mb-4">
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <span class="cat-tag cat-open" style="font-size:.8rem;">Open Elective</span>
+        <span style="font-size:.78rem; color:var(--muted);">{{ categories.open|length }} course{{ categories.open|length|pluralize }}</span>
+      </div>
+      <div class="row g-3">
+        {% for course in categories.open %}
+          {% include "electives/_catalog_card.html" %}
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Professional Elective -->
+    {% if categories.professional %}
+    <div class="mb-4">
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <span class="cat-tag cat-professional" style="font-size:.8rem;">Professional Elective</span>
+        <span style="font-size:.78rem; color:var(--muted);">{{ categories.professional|length }} course{{ categories.professional|length|pluralize }}</span>
+      </div>
+      <div class="row g-3">
+        {% for course in categories.professional %}
+          {% include "electives/_catalog_card.html" %}
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% endfor %}
+  {% else %}
+    <div class="card">
+      <div class="card-body text-center py-5" style="color:var(--muted);">
+        <div style="font-size:3rem; margin-bottom:.5rem;">📚</div>
+        <p style="font-weight:600;">No published courses yet</p>
+        <p style="font-size:.83rem;">Check back once courses are published by the admin.</p>
+      </div>
+    </div>
+  {% endif %}
+{% endif %}
+
+<script src="/static/js/ajax_seats.js"></script>
+{% endblock %}

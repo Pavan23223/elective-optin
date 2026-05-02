@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Edit Profile — SJBIT{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <h1>Edit Profile</h1>
+  <p>Update your name and password</p>
+</div>
+
+<div class="row">
+  <!-- Edit Name Card -->
+  <div class="col-md-6 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <h5 style="font-weight:700; margin-bottom:1rem; color:var(--text);">
+          👤 Update Name
+        </h5>
+        <form method="POST">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="update_name">
+          
+          <div class="mb-3">
+            <label class="form-label">Current Name</label>
+            <input type="text" class="form-control" value="{{ student.name }}" disabled>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">New Name</label>
+            <input type="text" name="name" class="form-control" value="{{ student.name }}" required>
+          </div>
+          
+          <button type="submit" class="btn btn-primary">
+            Update Name
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Password Card -->
+  <div class="col-md-6 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <h5 style="font-weight:700; margin-bottom:1rem; color:var(--text);">
+          🔒 Change Password
+        </h5>
+        <form method="POST">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="update_password">
+          
+          <div class="mb-3">
+            <label class="form-label">Current Password</label>
+            <input type="password" name="current_password" class="form-control" required>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">New Password</label>
+            <input type="password" name="new_password" class="form-control" required minlength="4">
+            <small class="text-muted">Minimum 4 characters</small>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Confirm New Password</label>
+            <input type="password" name="confirm_password" class="form-control" required minlength="4">
+          </div>
+          
+          <button type="submit" class="btn btn-warning">
+            Change Password
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Account Info Card -->
+<div class="card">
+  <div class="card-body">
+    <h5 style="font-weight:700; margin-bottom:1rem; color:var(--text);">
+      📋 Account Information
+    </h5>
+    <div class="row">
+      <div class="col-md-6 mb-2">
+        <strong>USN:</strong> {{ student.usn }}
+      </div>
+      <div class="col-md-6 mb-2">
+        <strong>Department:</strong> {{ student.department.name }}
+      </div>
+      <div class="col-md-6 mb-2">
+        <strong>Semester:</strong> {{ student.current_semester }}
+      </div>
+      <div class="col-md-6 mb-2">
+        <strong>Section:</strong> {{ student.section }}
+      </div>
+    </div>
+    <div class="mt-3">
+      <a href="/student-dashboard/" class="btn btn-outline-secondary">
+        ← Back to Dashboard
+      </a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

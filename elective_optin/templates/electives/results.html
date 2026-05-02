@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>My Preferences — {{ student.name }}</h2>
+    <a href="/student-dashboard/" class="btn btn-outline-secondary btn-sm">← Back</a>
+</div>
+
+{% if preferences %}
+<!-- Visual Preference Flow -->
+<div class="d-flex flex-wrap gap-3 mb-4">
+    {% for p in preferences %}
+    <div class="card text-center p-3" style="min-width:160px;">
+        <div class="fw-bold mb-1">Preference {{ p.rank }}</div>
+        <div class="mb-2" style="font-size:13px;">{{ p.course.name }}</div>
+        {% if p.status == "allocated" %}
+            <span class="badge bg-success fs-6">✅ Allocated</span>
+        {% elif p.status == "rejected" %}
+            <span class="badge bg-danger fs-6">❌ Rejected</span>
+        {% else %}
+            <span class="badge bg-warning text-dark fs-6">⏳ Pending</span>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Detailed Table -->
+<table class="table table-bordered bg-white shadow-sm">
+    <thead class="table-dark">
+        <tr>
+            <th>Rank</th>
+            <th>Course</th>
+            <th>Department</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>Submitted At</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in preferences %}
+        <tr>
+            <td>{{ p.rank }}</td>
+            <td>{{ p.course.name }}</td>
+            <td>{{ p.course.department.name }}</td>
+            <td>{{ p.course.get_category_display }}</td>
+            <td>
+                {% if p.status == "allocated" %}
+                    <span class="badge bg-success">Allocated</span>
+                {% elif p.status == "rejected" %}
+                    <span class="badge bg-danger">Rejected</span>
+                {% else %}
+                    <span class="badge bg-warning text-dark">Pending</span>
+                {% endif %}
+            </td>
+            <td>{{ p.timestamp|date:"d M Y, H:i" }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-info">
+    You haven't submitted any preferences yet.
+    <a href="/student-dashboard/">Browse courses →</a>
+</div>
+{% endif %}
+
+{% endblock %}

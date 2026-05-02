@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Student Login — EduElect{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+  <div class="col-12 col-sm-9 col-md-6 col-lg-4">
+    <div class="card p-4">
+      <div class="text-center mb-4">
+        <div style="font-size:2rem;">🎒</div>
+        <h4 style="font-weight:700; margin:.5rem 0 .2rem;">Student Login</h4>
+        <p style="font-size:.85rem; color:#888;">Use your USN and password</p>
+      </div>
+      <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label">USN</label>
+          <input type="text" name="usn" class="form-control" placeholder="e.g. 1JB23CS001" required autofocus>
+        </div>
+        <div class="mb-4">
+          <label class="form-label">Password</label>
+          <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-100 py-2">Sign In</button>
+      </form>
+      <p class="text-center mt-3" style="font-size:.82rem; color:#aaa;">
+        Default password: <strong>student@1234</strong>
+      </p>
+      <p class="text-center" style="font-size:.82rem;">
+        <a href="/" style="color:#4f46e5; text-decoration:none;">← Back to home</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

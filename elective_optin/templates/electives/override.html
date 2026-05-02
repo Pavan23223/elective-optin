@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% block title %}Manual Allocation — EduElect{% endblock %}
+
+{% block content %}
+
+<div class="page-header d-flex justify-content-between align-items-start flex-wrap gap-2">
+  <div>
+    <h1>⚡ Manual Allocation</h1>
+    <p>Search a student by USN to cancel or force-allocate a course</p>
+  </div>
+  <div class="btn-group-mobile">
+    <a href="/admin-panel/?tab=allocations" class="btn btn-outline-secondary btn-sm">← Allocations</a>
+    <a href="/admin-panel/" class="btn btn-outline-primary btn-sm">Admin Panel</a>
+  </div>
+</div>
+
+<!-- USN Search -->
+<div class="card mb-4">
+  <div class="card-body">
+    <p style="font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin-bottom:.8rem;">
+      🔍 Search Student
+    </p>
+    <form method="get" action="/override/" class="d-flex gap-2 flex-wrap align-items-end">
+      <div style="flex:1; min-width:220px;">
+        <label class="form-label">Student USN</label>
+        <input type="text" name="usn" value="{{ usn }}"
+               class="form-control" placeholder="e.g. 1JB23CS001"
+               autofocus autocomplete="off">
+      </div>
+      <button type="submit" class="btn btn-primary">Search</button>
+      {% if usn %}<a href="/override/" class="btn btn-outline-secondary">Clear</a>{% endif %}
+    </form>
+  </div>
+</div>
+
+{% if usn and not student %}
+<div class="alert alert-danger">
+  No student found with USN <strong>{{ usn }}</strong>.
+</div>
+
+{% elif student %}
+
+<!-- Student Info Card -->
+<div class="card mb-4" style="border-left:4px solid var(--primary);">
+  <div class="card-body">
+    <div class="row g-3 align-items-center">
+      <div class="col-auto">
+        <div style="width:52px; height:52px; border-radius:50%; background:var(--primary-l);
+                    display:flex; align-items:center; justify-content:center;
+                    font-size:1.4rem; font-weight:800; color:var(--primary);">
+          {{ student.name|first }}
+        </div>
+      </div>
+      <div class="col">
+        <div style="font-weight:700; font-size:1.05rem;">{{ student.name }}</div>
+        <div style="font-size:.83rem; color:var(--muted);">
+          <span style="font-family:monospace;">{{ student.usn }}</span>
+          &nbsp;·&nbsp; {{ student.department.name }}
+          &nbsp;·&nbsp; Semester {{ student.current_semester }}
+          &nbsp;·&nbsp; Section {{ student.section }}
+        </div>
+      </div>
+      <div class="col-auto">
+        <span style="font-size:1.1rem; font-weight:800;
+          color:{% if student.cgpa >= 8.0 %}var(--success){% elif student.cgpa >= 6.0 %}var(--warn){% else %}var(--danger){% endif %};">
+          CGPA {{ student.cgpa }}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+
+  <!-- Current Preferences -->
+  <div class="col-12 col-lg-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <p style="font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin-bottom:1rem;">
+          Current Preferences
+        </p>
+
+        {% if preferences %}
+        <div class="table-wrap">
+          <table class="table table-hover mb-0">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Course</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in preferences %}
+              <tr>
+                <td><span style="font-weight:800; color:var(--primary);">{{ p.rank }}</span></td>
+                <td>
+                  <div style="font-weight:600; font-size:.86rem;">{{ p.course.name }}</div>
+                  <div style="font-size:.74rem; color:var(--muted);">{{ p.course.department.name }} · Sem {{ p.course.semester }}</div>
+                </td>
+                <td>
+                  {% if p.status == 'allocated' %}<span class="badge-allocated">✅ Allocated</span>
+                  {% elif p.status == 'rejected' %}<span class="badge-rejected">❌ Rejected</span>
+                  {% else %}<span class="badge-pending">⏳ Pending</span>{% endif %}
+                </td>
+                <td>
+                  <a href="/override/cancel/{{ p.id }}/"
+                     data-course="{{ p.course.name }}"
+                     data-student="{{ student.name }}"
+                     data-allocated="{{ p.status }}"
+                     onclick="return confirmCancel(this)"
+                     class="btn btn-xs btn-outline-danger">
+                    🗑 Cancel
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4" style="color:var(--muted);">
+          <div style="font-size:2rem; margin-bottom:.4rem;">📋</div>
+          <p style="font-size:.85rem;">No preferences submitted yet.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Force Allocate -->
+  <div class="col-12 col-lg-6">
+    <div class="card h-100" style="border-left:4px solid var(--warn);">
+      <div class="card-body">
+        <p style="font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin-bottom:.3rem;">
+          ⚡ Force Allocate a Course
+        </p>
+        <p style="font-size:.8rem; color:var(--muted); margin-bottom:1rem;">
+          Bypasses eligibility checks. Seat count decremented if available.
+        </p>
+
+        {% if available_courses %}
+        <form method="POST" action="/override/force-allocate/"
+              onsubmit="return confirm('Force-allocate the selected course to {{ student.name }}?\nThis bypasses all eligibility rules.')">
+          {% csrf_token %}
+          <input type="hidden" name="usn" value="{{ student.usn }}">
+
+          <div class="mb-3">
+            <label class="form-label">Select Course</label>
+            <select name="course_id" class="form-select" required>
+              <option value="">— Choose a course —</option>
+              {% regroup available_courses by semester as sem_list %}
+              {% for sem_group in sem_list %}
+              <optgroup label="Semester {{ sem_group.grouper }}">
+                {% for course in sem_group.list %}
+                <option value="{{ course.id }}">
+                  {{ course.name }} · {{ course.department.name }}
+                  ({{ course.available_seats }}/{{ course.seats }} seats)
+                </option>
+                {% endfor %}
+              </optgroup>
+              {% endfor %}
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-warning w-100" style="font-weight:700;">
+            ⚡ Force Allocate
+          </button>
+        </form>
+        {% else %}
+        <div class="text-center py-4" style="color:var(--muted);">
+          <p style="font-size:.85rem;">No published courses available to assign.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endif %}
+
+<script>
+function confirmCancel(el) {
+  var course   = el.getAttribute('data-course');
+  var student  = el.getAttribute('data-student');
+  var status   = el.getAttribute('data-allocated');
+  var extra    = status === 'allocated' ? '\nThe seat will be restored.' : '';
+  return confirm('Cancel "' + course + '" for ' + student + '?' + extra);
+}
+</script>
+
+{% endblock %}

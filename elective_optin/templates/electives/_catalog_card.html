@@ -1,0 +1,57 @@
+<div class="col-12 col-sm-6 col-lg-4">
+  <div class="card h-100" style="border-radius:14px;">
+    <div class="card-body" style="padding:1.1rem;">
+
+      <!-- Tags row -->
+      <div class="d-flex flex-wrap gap-1 mb-2">
+        {% if course.category == 'professional' %}<span class="cat-tag cat-professional">Professional</span>
+        {% elif course.category == 'open' %}<span class="cat-tag cat-open">Open</span>
+        {% else %}<span class="cat-tag cat-ability">Ability</span>{% endif %}
+        <span class="dept-tag">{{ course.department.name }}</span>
+        <span style="font-size:.72rem; font-weight:600; color:var(--primary); background:var(--primary-l); border-radius:6px; padding:.2rem .55rem;">
+          Sem {{ course.semester }}
+        </span>
+        <span style="font-size:.72rem; font-weight:600; color:var(--primary); background:var(--primary-l); border-radius:6px; padding:.2rem .55rem;">
+          {{ course.credits }}cr
+        </span>
+      </div>
+
+      <!-- Name -->
+      <div style="font-weight:700; font-size:.98rem; color:var(--text); margin-bottom:.5rem; word-break:break-word;">
+        {{ course.name }}
+      </div>
+
+      <!-- Job perspective -->
+      {% if course.job_perspective %}
+      <p style="font-size:.82rem; color:var(--muted); margin-bottom:.5rem;">
+        💼 {{ course.job_perspective|truncatechars:80 }}
+      </p>
+      {% endif %}
+
+      <!-- Prerequisites -->
+      <p style="font-size:.78rem; color:var(--muted); margin-bottom:.6rem;">
+        <strong>Prerequisites:</strong> {{ course.prerequisites|default:"None" }}
+      </p>
+
+      <!-- Seats -->
+      <span class="seats-badge {% if course.available_seats == 0 %}low{% endif %}">
+        <span id="seats-{{ course.id }}">{{ course.available_seats }}</span>/{{ course.seats }} seats
+      </span>
+
+    </div>
+
+    {% if user.is_authenticated %}
+    <div style="padding:.75rem 1.1rem; border-top:1px solid var(--border);">
+      {% if course.available_seats == 0 %}
+        <a href="/select/{{ course.id }}/" class="btn btn-sm w-100"
+           style="background:var(--warn-l); color:var(--warn); font-weight:700; border-radius:10px;">
+          Join Waitlist
+        </a>
+      {% else %}
+        <a href="/select/{{ course.id }}/" class="btn btn-primary btn-sm w-100">Apply</a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+</div>

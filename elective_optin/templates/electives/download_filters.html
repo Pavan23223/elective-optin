@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}Download Allocation Details{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Download Allocation Details</h1>
+  <p>Apply filters to customize your download</p>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <form method="get" action="{% url 'download_allocation_details' %}">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label for="dept" class="form-label">Department</label>
+          <select name="dept" id="dept" class="form-select">
+            <option value="">All Departments</option>
+            {% for dept in departments %}
+              <option value="{{ dept.name }}">{{ dept.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        
+        <div class="col-md-6">
+          <label for="category" class="form-label">Category</label>
+          <select name="category" id="category" class="form-select">
+            <option value="">All Categories</option>
+            {% for cat_key, cat_label in category_choices %}
+              <option value="{{ cat_key }}">{{ cat_label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        
+        <div class="col-md-4">
+          <label for="sem" class="form-label">Semester</label>
+          <select name="sem" id="sem" class="form-select">
+            <option value="">All Semesters</option>
+            {% for sem in semesters %}
+              <option value="{{ sem }}">Semester {{ sem }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        
+        <div class="col-md-4">
+          <label for="class" class="form-label">Section/Class</label>
+          <select name="class" id="class" class="form-select">
+            <option value="">All Sections</option>
+            {% for section in sections %}
+              <option value="{{ section }}">{{ section }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        
+        <div class="col-md-4">
+          <label for="status" class="form-label">Status</label>
+          <select name="status" id="status" class="form-select">
+            <option value="">All Status</option>
+            <option value="allocated">Allocated</option>
+            <option value="rejected">Rejected</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
+        
+        <div class="col-12">
+          <label for="subject" class="form-label">Subject/Course Name</label>
+          <input type="text" name="subject" id="subject" class="form-control" 
+                 placeholder="Enter course name to filter (optional)">
+        </div>
+      </div>
+      
+      <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-download"></i> Download CSV
+        </button>
+        <a href="{% url 'download_allocation_details' %}?download=all" class="btn btn-outline-secondary">
+          Download All (No Filters)
+        </a>
+        <a href="javascript:history.back()" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="mt-4">
+  <div class="alert alert-info">
+    <h6 class="mb-2">Download Options:</h6>
+    <ul class="mb-0">
+      <li><strong>Courses Group-wise:</strong> Downloads all published courses organized by department and category</li>
+      <li><strong>Allocation Details:</strong> Downloads student preferences and allocations with filtering options</li>
+      <li>Use filters above to narrow down the data before downloading</li>
+      <li>Leave filters empty to download all data</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}
