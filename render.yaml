@@ -2,7 +2,7 @@ services:
   - type: web
     name: sjbit-elective-optin
     runtime: python
-    buildCommand: "./build.sh"
+    buildCommand: "chmod +x ./build.sh && ./build.sh"
     startCommand: "gunicorn elective_optin.wsgi:application --chdir elective_optin --workers 2 --threads 2 --timeout 120"
     envVars:
       - key: SECRET_KEY
